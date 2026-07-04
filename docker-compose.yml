@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  inventree:
+    image: ghcr.io/inventree/inventree:latest
+    container_name: inventree
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./media:/mnt/media
+      - ./backups:/mnt/backups
+    environment:
+      - TZ=Europe/Madrid
+      - INVENTREE_PORT=8080
+      - INVENTREE_HIDE_PIP_VERSION=true
+      - INVENTREE_PLUGINS_BASE=https://github.com/inventree/
+    env_file:
+      - .env  # Nota: Este archivo debe crearse manualmente y NO se debe subir a GitHub
+
+  db:
+    image: postgres:15-alpine
+    container_name: inventree-db
+    restart: unless-stopped
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=inventree
+      - POSTGRES_USER=inventree
+      - POSTGRES_PASSWORD=inventree  # Cambiar en producción
+      - PGDATA=/var/lib/postgresql/data/pgdata
+
+  redis:
+    image: redis:7-alpine
+    container_name: inventree-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - ./redis:/data
+
+volumes:
+  postgres:
+  redis:
